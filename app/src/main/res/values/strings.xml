@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Aurora Guard</string>
+    <string name="accessibility_desc">Aurora Guard sprawdza, która aplikacja jest na ekranie, i wyświetla komunikat zamiast zablokowanej aplikacji (zgodnie z ustawieniami rodzica w Home Assistant).</string>
+</resources>

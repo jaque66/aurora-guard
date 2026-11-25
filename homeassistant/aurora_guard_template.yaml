@@ -1,0 +1,60 @@
+# Aurora Guard - czujniki po stronie Home Assistanta (szablony wyzwalane webhookiem).
+# Skopiuj do katalogu z szablonami (np. templates/) i podmien:
+#   CHILD            -> identyfikator telefonu wpisany w aplikacji (np. dziecko1)
+#   WEBHOOK_ID       -> dlugi losowy ciag (np. ag_dziecko1_<16 znakow hex>) - wpisz go tez w aplikacji; traktuj jak haslo
+# Wymaga: todo.guard_CHILD i todo.guard_CHILD_dozwolone (integracja Local To-do) oraz
+#         input_boolean.blokada_telefon_CHILD i input_boolean.blokada_telefon_CHILD_caly.
+# W configuration.yaml: template: !include_dir_merge_list templates/   (plik jest lista)
+
+- triggers:
+    - trigger: webhook
+      webhook_id: WEBHOOK_ID
+      local_only: false
+      allowed_methods: [POST]
+  sensor:
+    - name: "Aurora Guard CHILD status"
+      unique_id: aurora_guard_CHILD_status
+      icon: mdi:shield-lock-outline
+      state: "{{ trigger.json.state | default('ok') if trigger.json.type | default('status') == 'status' else (this.state | default('ok')) }}"
+      attributes:
+        accessibility: "{{ trigger.json.accessibility if trigger.json.type | default('status') == 'status' else this.attributes.accessibility | default(false) }}"
+        locked: "{{ trigger.json.locked if trigger.json.type | default('status') == 'status' else this.attributes.locked | default(false) }}"
+        full_locked: "{{ trigger.json.full_locked if trigger.json.type | default('status') == 'status' else this.attributes.full_locked | default(false) }}"
+        blocked_count: "{{ trigger.json.blocked_count if trigger.json.type | default('status') == 'status' else this.attributes.blocked_count | default(0) }}"
+        battery: "{{ trigger.json.battery if trigger.json.type | default('status') == 'status' else this.attributes.battery | default(none) }}"
+        last_seen: "{{ trigger.json.last_seen if trigger.json.type | default('status') == 'status' else this.attributes.last_seen | default(none) }}"
+        version: "{{ trigger.json.version if trigger.json.type | default('status') == 'status' else this.attributes.version | default(none) }}"
+    - name: "Aurora Guard CHILD apps"
+      unique_id: aurora_guard_CHILD_apps
+      icon: mdi:apps
+      state: "{{ trigger.json.apps | length if trigger.json.type | default('status') == 'apps' else (this.state | default(0)) }}"
+      attributes:
+        apps: "{{ trigger.json.apps if trigger.json.type | default('status') == 'apps' else this.attributes.apps | default([]) }}"
+
+# Reguly (pakiety do blokowania / dozwolone) - czytane przez aplikacje z czujnika, takze na koncie zwyklego uzytkownika
+- triggers:
+    - trigger: state
+      entity_id: [todo.guard_CHILD, todo.guard_CHILD_dozwolone]
+    - trigger: homeassistant
+      event: start
+    - trigger: event
+      event_type: aurora_guard_refresh
+    - trigger: time_pattern
+      minutes: "/15"
+  actions:
+    - action: todo.get_items
+      target: {entity_id: todo.guard_CHILD}
+      data: {status: needs_action}
+      response_variable: blk
+    - action: todo.get_items
+      target: {entity_id: todo.guard_CHILD_dozwolone}
+      data: {status: needs_action}
+      response_variable: alw
+  sensor:
+    - name: "Aurora Guard CHILD rules"
+      unique_id: aurora_guard_CHILD_rules
+      icon: mdi:shield-account-outline
+      state: "{{ blk['todo.guard_CHILD']['items'] | length }}"
+      attributes:
+        blocked: "{{ blk['todo.guard_CHILD']['items'] | map(attribute='summary') | map('regex_replace', '[|].*$', '') | list }}"
+        allowed: "{{ alw['todo.guard_CHILD_dozwolone']['items'] | map(attribute='summary') | map('regex_replace', '[|].*$', '') | list }}"
