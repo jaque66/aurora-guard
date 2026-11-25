@@ -99,6 +99,16 @@ class Prefs(ctx: Context) {
         get() = p.getString("webhook", "") ?: ""
         set(v) = p.edit().putString("webhook", v.trim()).apply()
     /** Czujnik z regulami (atrybuty blocked/allowed) - czytelny takze dla zwyklego uzytkownika. */
+    /** Wysylanie polozenia do HA (wlaczane w aplikacji, widoczne w powiadomieniu). */
+    var locEnabled: Boolean
+        get() = p.getBoolean("locEnabled", false)
+        set(v) = p.edit().putBoolean("locEnabled", v).apply()
+    var lastLocReport: Long
+        get() = p.getLong("lastLocReport", 0L)
+        set(v) = p.edit().putLong("lastLocReport", v).apply()
+    /** Przycisk w HA (input_button) - jego nacisniecie w Pulse prosi telefon o aktualna pozycje. */
+    val locateEntity: String get() = "input_button.lokalizacja_telefon_$deviceId"
+
     var rulesEntity: String
         get() = p.getString("rulesEntity", "")?.ifBlank { null } ?: "sensor.aurora_guard_${deviceId}_rules"
         set(v) = p.edit().putString("rulesEntity", v.trim()).apply()

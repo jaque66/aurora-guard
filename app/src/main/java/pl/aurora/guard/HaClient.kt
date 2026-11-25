@@ -121,6 +121,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
                 if (id == prefs.lockEntity) setLock(d.optJSONObject("new_state")?.optString("state") == "on")
                 else if (id == prefs.fullEntity) setFull(d.optJSONObject("new_state")?.optString("state") == "on")
                 else if (id == prefs.rulesEntity) rules(d.optJSONObject("new_state")?.optJSONObject("attributes"))
+                else if (id == prefs.locateEntity) reportLocation("zadanie")
                 else if (id == prefs.todoEntity) requestTodo(w)
                 else if (id == prefs.allowTodo) send(w, JSONObject().put("id", 4).put("type", "todo/item/list").put("entity_id", prefs.allowTodo))
             }
@@ -152,6 +153,27 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         http.newCall(req).execute().use { it.isSuccessful }
     } catch (_: Exception) { false }
 
+    /** Wysyla polozenie przez webhook (HA zapisuje je jako device_tracker). */
+    fun reportLocation(reason: String) {
+        if (!prefs.locEnabled || prefs.webhook.isBlank()) return
+        Loc.get(ctx) { l ->
+            if (l == null) return@get
+            Thread {
+                val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                if (hook(JSONObject().put("type", "location").put("lat", l.latitude).put("lon", l.longitude).put("acc", l.accuracy.toInt()).put("time", l.time)
+                        .put("reason", reason).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)))) prefs.lastLocReport = System.currentTimeMillis()
+            }.start()
+        }
+    }
+
+    /** Okresowo: poza domem co 15 min, w domowym Wi-Fi co godzine. */
+    fun maybeLocate() {
+        if (!prefs.locEnabled) return
+        val home = prefs.urlInternal.isNotBlank() && prefs.urlMode == "wewnętrzne"
+        val every = (if (home) 60 else 15) * 60_000L
+        if (System.currentTimeMillis() - prefs.lastLocReport >= every) reportLocation("auto")
+    }
+
     /** Lista aplikacji z ikona w launcherze - w Pulse zaznaczasz z niej, co ma byc blokowane. */
     fun reportApps() {
         val pm = ctx.packageManager
@@ -172,13 +194,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.9"))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.0"))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.9")
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.0")
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

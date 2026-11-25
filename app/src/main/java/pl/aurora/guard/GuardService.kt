@@ -22,7 +22,7 @@ class GuardService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
-            Thread { client?.reportStatus() }.start()
+            Thread { client?.reportStatus(); client?.maybeLocate() }.start()
             handler.postDelayed(this, 300_000L)
         }
     }
@@ -30,7 +30,7 @@ class GuardService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("guard", "Aurora Guard", NotificationManager.IMPORTANCE_MIN))
-        val n = Notification.Builder(this, "guard").setContentTitle("Aurora Guard działa").setContentText("Blokady aplikacji zarządzane z Home Assistanta")
+        val n = Notification.Builder(this, "guard").setContentTitle("Aurora Guard działa").setContentText(if (Prefs(this).locEnabled) "Blokady aplikacji i lokalizacja – zarządzane z Home Assistanta" else "Blokady aplikacji zarządzane z Home Assistanta")
             .setSmallIcon(R.drawable.ic_stat_guard).setOngoing(true)
             .setContentIntent(android.app.PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)).build()
         if (Build.VERSION.SDK_INT >= 34) ServiceCompat.startForeground(this, 1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)

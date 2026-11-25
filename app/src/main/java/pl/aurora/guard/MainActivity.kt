@@ -107,6 +107,21 @@ class MainActivity : Activity() {
         }
         root.addView(admCard)
 
+        root.addView(Ui.section(this, "Lokalizacja"))
+        val locCard = Ui.card(this)
+        val sw3 = android.widget.Switch(this).apply { text = "Wysyłaj lokalizację do Home Assistanta"; setTextColor(Ui.INK); textSize = 15f; isChecked = prefs.locEnabled }
+        locCard.addView(sw3)
+        locCard.addView(TextView(this).apply {
+            text = "Telefon przekazuje pozycję rodzicom: poza domem co 15 minut, w domowym Wi-Fi co godzinę oraz na prośbę z Home Assistanta („Gdzie jest telefon?”). Wymaga uprawnienia lokalizacji „Zezwalaj cały czas” i działa tylko przy ustawionym webhooku. Włączona lokalizacja jest widoczna w powiadomieniu aplikacji."
+            textSize = 12f; setTextColor(Ui.INK2); setPadding(0, Ui.dp(this@MainActivity, 8), 0, 0)
+        })
+        sw3.setOnCheckedChangeListener { _, on ->
+            prefs.locEnabled = on
+            if (on) askLocation()
+            stopService(Intent(this, GuardService::class.java)); GuardService.start(this)
+        }
+        root.addView(locCard)
+
         root.addView(Ui.section(this, "Połączenie z Home Assistantem"))
         val form = Ui.card(this)
         field(form, "url", "Adres zewnętrzny Home Assistanta (poza domem, np. https://ha.twojadomena.pl)", prefs.url)
@@ -135,6 +150,22 @@ class MainActivity : Activity() {
 
         setContentView(ScrollView(this).apply { background = Ui.background(); isFillViewport = true; addView(root) })
         refresh()
+    }
+
+    private fun askLocation() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) { requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 8); return }
+        if (Build.VERSION.SDK_INT >= 29 && checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= 30) AlertDialog.Builder(this).setTitle("Lokalizacja w tle")
+                .setMessage("Na następnym ekranie wybierz: Uprawnienia → Lokalizacja → „Zezwalaj cały czas”.")
+                .setPositiveButton("Dalej") { _, _ -> startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }.setNegativeButton("Anuluj", null).show()
+            else requestPermissions(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), 9)
+        }
+    }
+
+    override fun onRequestPermissionsResult(code: Int, perms: Array<out String>, res: IntArray) {
+        super.onRequestPermissionsResult(code, perms, res)
+        if (code == 8 && prefs.locEnabled) askLocation()
+        if (::statusCard.isInitialized) refresh()
     }
 
     private fun dpm() = getSystemService(android.content.Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
@@ -187,6 +218,11 @@ class MainActivity : Activity() {
             val loc = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
             permCard.addView(Ui.statusRow(this, "Lokalizacja (odczyt nazwy Wi-Fi)", if (loc) "zezwolona" else "dotknij, aby zezwolić – bez tego aplikacja sprawdza dostępność adresu wewnętrznego", loc) { requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 7) })
         }
+        if (prefs.locEnabled) {
+            val bg = Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            permCard.addView(Ui.statusRow(this, "Lokalizacja w tle", if (fine && bg) "włączona" + (if (prefs.webhook.isBlank()) " – ale brak webhooka, nic nie jest wysyłane" else "") else "dotknij, aby zezwolić „cały czas”", fine && bg && prefs.webhook.isNotBlank()) { askLocation() })
+        }
         permCard.addView(Ui.statusRow(this, "Powiadomienia", if (notif) "włączone" else "dotknij, aby zezwolić", notif) { if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1) })
         permCard.addView(Ui.statusRow(this, "Bez ograniczeń baterii", if (bat) "włączone" else "dotknij, aby zezwolić (praca w tle)", bat) { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) })
     }
@@ -199,4 +235,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "1.9" }
+object BuildConfigVersion { const val NAME = "2.0" }

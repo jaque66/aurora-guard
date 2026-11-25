@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.0 – 2026-11-25
+
+**PL**
+- **Lokalizacja telefonu** (opcjonalna, przełącznik „Lokalizacja” w aplikacji): telefon przekazuje pozycję do Home Assistanta przez webhook – poza domem co 15 minut, w domowym Wi-Fi co godzinę oraz na prośbę rodzica („Gdzie jest telefon?” w Pulse). Wymaga uprawnienia „Zezwalaj cały czas”. Włączona lokalizacja jest widoczna w powiadomieniu aplikacji. Pozycja trafia do `device_tracker` w HA (strefy i automatyzacje).
+
+**EN**
+- **Phone location** (optional, “Location” switch in the app): the phone reports its position to Home Assistant through the webhook – every 15 minutes away from home, hourly on the home Wi-Fi and on demand from a parent (“Where is the phone?” in Pulse). Needs the “Allow all the time” permission. When enabled it is shown in the app notification. The position ends up in a Home Assistant `device_tracker` (zones and automations).
+
 ## 1.9 – 2026-11-25
 
 **PL**
