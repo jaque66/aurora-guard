@@ -106,6 +106,18 @@ class Prefs(ctx: Context) {
     var lastLocReport: Long
         get() = p.getLong("lastLocReport", 0L)
         set(v) = p.edit().putLong("lastLocReport", v).apply()
+    /** Ustawienia sterowane z HA (jesli odpowiednie encje istnieja): czestotliwosc lokalizacji poza domem / w domu [min]. */
+    var locAwayMin: Int
+        get() = p.getInt("locAwayMin", 15)
+        set(v) = p.edit().putInt("locAwayMin", v.coerceIn(5, 720)).apply()
+    var locHomeMin: Int
+        get() = p.getInt("locHomeMin", 60)
+        set(v) = p.edit().putInt("locHomeMin", v.coerceIn(5, 1440)).apply()
+    val setLocEntity: String get() = "input_boolean.guard_lokalizacja_$deviceId"
+    val setAwayEntity: String get() = "input_number.guard_lok_poza_$deviceId"
+    val setHomeEntity: String get() = "input_number.guard_lok_dom_$deviceId"
+    val setMsgEntity: String get() = "input_text.guard_komunikat_$deviceId"
+    val setFullMsgEntity: String get() = "input_text.guard_komunikat_caly_$deviceId"
     /** Przycisk w HA (input_button) - jego nacisniecie w Pulse prosi telefon o aktualna pozycje. */
     val locateEntity: String get() = "input_button.lokalizacja_telefon_$deviceId"
 

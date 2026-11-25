@@ -90,6 +90,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
                         val arr = m.optJSONArray("result") ?: return
                         for (i in 0 until arr.length()) {
                             val s = arr.getJSONObject(i)
+                            applySetting(s.optString("entity_id"), s.optString("state"))
                             if (s.optString("entity_id") == prefs.lockEntity) setLock(s.optString("state") == "on")
                             if (s.optString("entity_id") == prefs.fullEntity) setFull(s.optString("state") == "on")
                             if (s.optString("entity_id") == prefs.rulesEntity) rules(s.optJSONObject("attributes"))
@@ -118,6 +119,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             "event" -> {
                 val d = m.optJSONObject("event")?.optJSONObject("data") ?: return
                 val id = d.optString("entity_id")
+                applySetting(id, d.optJSONObject("new_state")?.optString("state") ?: "")
                 if (id == prefs.lockEntity) setLock(d.optJSONObject("new_state")?.optString("state") == "on")
                 else if (id == prefs.fullEntity) setFull(d.optJSONObject("new_state")?.optString("state") == "on")
                 else if (id == prefs.rulesEntity) rules(d.optJSONObject("new_state")?.optJSONObject("attributes"))
@@ -137,6 +139,18 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (b != null) { val s = HashSet<String>(); for (i in 0 until b.length()) s.add(b.optString(i).trim()); prefs.blocked = s }
         if (al != null) { val s = HashSet<String>(); for (i in 0 until al.length()) s.add(al.optString(i).trim()); prefs.allowed = s }
         prefs.lastSync = System.currentTimeMillis(); onRules()
+    }
+
+    /** Ustawienia aplikacji sterowane z HA (helpery guard_*); brak encji = ustawienia lokalne bez zmian. */
+    private fun applySetting(id: String, st: String) {
+        if (st.isBlank() || st == "unavailable" || st == "unknown") return
+        when (id) {
+            prefs.setLocEntity -> { val on = st == "on"; if (on != prefs.locEnabled) { prefs.locEnabled = on; GuardService.start(ctx) } }
+            prefs.setAwayEntity -> st.toDoubleOrNull()?.let { prefs.locAwayMin = it.toInt() }
+            prefs.setHomeEntity -> st.toDoubleOrNull()?.let { prefs.locHomeMin = it.toInt() }
+            prefs.setMsgEntity -> prefs.message = st
+            prefs.setFullMsgEntity -> prefs.fullMessage = st
+        }
     }
 
     private fun setLock(on: Boolean) { prefs.locked = on; onRules() }
@@ -170,7 +184,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
     fun maybeLocate() {
         if (!prefs.locEnabled) return
         val home = prefs.urlInternal.isNotBlank() && prefs.urlMode == "wewnętrzne"
-        val every = (if (home) 60 else 15) * 60_000L
+        val every = (if (home) prefs.locHomeMin else prefs.locAwayMin) * 60_000L
         if (System.currentTimeMillis() - prefs.lastLocReport >= every) reportLocation("auto")
     }
 
@@ -194,13 +208,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.0"))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.1"))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.0")
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.1")
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

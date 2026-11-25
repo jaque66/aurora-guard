@@ -112,7 +112,7 @@ class MainActivity : Activity() {
         val sw3 = android.widget.Switch(this).apply { text = "Wysyłaj lokalizację do Home Assistanta"; setTextColor(Ui.INK); textSize = 15f; isChecked = prefs.locEnabled }
         locCard.addView(sw3)
         locCard.addView(TextView(this).apply {
-            text = "Telefon przekazuje pozycję rodzicom: poza domem co 15 minut, w domowym Wi-Fi co godzinę oraz na prośbę z Home Assistanta („Gdzie jest telefon?”). Wymaga uprawnienia lokalizacji „Zezwalaj cały czas” i działa tylko przy ustawionym webhooku. Włączona lokalizacja jest widoczna w powiadomieniu aplikacji."
+            text = "Telefon przekazuje pozycję rodzicom: poza domem co ${prefs.locAwayMin} min, w domowym Wi-Fi co ${prefs.locHomeMin} min oraz na prośbę z Home Assistanta („Gdzie jest telefon?”). Częstotliwość i włączenie ustawia rodzic w Home Assistancie. Wymaga uprawnienia lokalizacji „Zezwalaj cały czas” i działa tylko przy ustawionym webhooku. Włączona lokalizacja jest widoczna w powiadomieniu aplikacji."
             textSize = 12f; setTextColor(Ui.INK2); setPadding(0, Ui.dp(this@MainActivity, 8), 0, 0)
         })
         sw3.setOnCheckedChangeListener { _, on ->
@@ -235,4 +235,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "2.0" }
+object BuildConfigVersion { const val NAME = "2.1" }

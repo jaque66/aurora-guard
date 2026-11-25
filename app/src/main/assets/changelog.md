@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.1 – 2026-11-25
+
+**PL**
+- **Ustawienia aplikacji sterowane z Home Assistanta**: częstotliwość lokalizacji poza domem i w domowym Wi-Fi, włączenie/wyłączenie lokalizacji oraz teksty komunikatów blokady (aplikacji i całego telefonu). Zmiana w HA działa od razu, bez dotykania telefonu. Jeśli odpowiednie encje (`input_*.guard_…_<id>`) nie istnieją, obowiązują ustawienia lokalne.
+
+**EN**
+- **App settings controlled from Home Assistant**: location frequency away from home and on the home Wi-Fi, location on/off and the lock-screen messages (apps and whole phone). A change in HA applies immediately, without touching the phone. If the matching entities (`input_*.guard_…_<id>`) do not exist, the local settings apply.
+
 ## 2.0 – 2026-11-25
 
 **PL**
