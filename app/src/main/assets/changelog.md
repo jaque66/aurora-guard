@@ -2,6 +2,26 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.2 – 2026-11-26
+
+**PL**
+- **Limity czasu** w aplikacjach (np. 60 min dziennie): po wyczerpaniu limitu (plus bonusowe minuty od rodzica) aplikacja się blokuje; 5 minut przed końcem dziecko dostaje ostrzeżenie. Wymaga „Dostępu do danych o użyciu aplikacji”.
+- **Prośba o więcej czasu**: przycisk na ekranie blokady wysyła prośbę do rodzica (powiadomienie z przyciskami +15 / +30 min / Odmów albo odpowiedź w Pulse).
+- **Statystyki**: czas w aplikacjach dziś i w ostatnich 7 dniach trafia do HA.
+- **Znajdź telefon**: rodzic uruchamia głośny alarm na telefonie (nawet w trybie cichym), wyciszenie z powiadomienia.
+- **Wiadomość od rodzica**: tekst wysłany z Pulse pojawia się na ekranie telefonu i w powiadomieniu.
+- **Ostrzeżenia o ingerencji**: rodzic dostaje powiadomienie, gdy wyłączono usługę dostępności lub administratora urządzenia albo cofnięto uprawnienia lokalizacji / użycia.
+- Przyciski „Poproś o czas” także na ekranie blokady całego telefonu.
+
+**EN**
+- **Time limits** per app (e.g. 60 min a day): when the limit (plus any bonus minutes from a parent) is used up the app is blocked; a warning appears 5 minutes before the end. Needs “Usage access”.
+- **Ask for more time**: a button on the lock screen sends a request to the parent (notification with +15 / +30 min / Decline buttons, or reply in Pulse).
+- **Statistics**: time in apps today and over the last 7 days is reported to HA.
+- **Find my phone**: a parent triggers a loud alarm on the phone (even in silent mode), silenced from the notification.
+- **Message from a parent**: text sent from Pulse is shown on the phone screen and as a notification.
+- **Tamper warnings**: a parent is notified when the accessibility service or device admin is turned off, or the location / usage permissions are revoked.
+- “Ask for time” button also on the whole-phone lock screen.
+
 ## 2.1 – 2026-11-25
 
 **PL**

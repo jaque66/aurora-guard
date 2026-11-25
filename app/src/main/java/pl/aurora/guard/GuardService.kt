@@ -22,7 +22,7 @@ class GuardService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
-            Thread { client?.reportStatus(); client?.maybeLocate() }.start()
+            Thread { client?.reportStatus(); client?.maybeLocate(); client?.maybeUsage() }.start()
             handler.postDelayed(this, 300_000L)
         }
     }

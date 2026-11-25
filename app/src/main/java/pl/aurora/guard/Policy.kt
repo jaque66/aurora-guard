@@ -8,6 +8,12 @@ import android.content.Context
 object Policy {
     fun shouldBlock(prefs: Prefs, pkg: String): Boolean = prefs.locked && pkg in prefs.blocked
 
+    /** Limit czasu dla aplikacji (dzienny + bonus od rodzica) wyczerpany? */
+    fun limitLeft(ctx: Context, prefs: Prefs, pkg: String): Int? {
+        val lim = prefs.limitFor(pkg) ?: return null
+        return lim + prefs.bonusMin - Usage.minutesToday(ctx, pkg)
+    }
+
     fun isDeviceOwner(ctx: Context): Boolean {
         val dpm = ctx.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         return dpm.isDeviceOwnerApp(ctx.packageName)

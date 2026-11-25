@@ -118,6 +118,32 @@ class Prefs(ctx: Context) {
     val setHomeEntity: String get() = "input_number.guard_lok_dom_$deviceId"
     val setMsgEntity: String get() = "input_text.guard_komunikat_$deviceId"
     val setFullMsgEntity: String get() = "input_text.guard_komunikat_caly_$deviceId"
+    /** Limity czasu dziennie: "pakiet|minuty" (z listy regul w HA), bonusowe minuty na dzis i znaczniki. */
+    var limits: Set<String>
+        get() = p.getStringSet("limits", emptySet()) ?: emptySet()
+        set(v) = p.edit().putStringSet("limits", v).apply()
+    fun limitFor(pkg: String): Int? = limits.firstOrNull { it.substringBefore("|") == pkg }?.substringAfter("|")?.toIntOrNull()
+    var bonusMin: Int
+        get() = p.getInt("bonusMin", 0)
+        set(v) = p.edit().putInt("bonusMin", v.coerceIn(0, 600)).apply()
+    var lastReq: Long
+        get() = p.getLong("lastReq", 0L)
+        set(v) = p.edit().putLong("lastReq", v).apply()
+    var lastMsgStamp: String
+        get() = p.getString("lastMsgStamp", "") ?: ""
+        set(v) = p.edit().putString("lastMsgStamp", v).apply()
+    var lastUsageReport: Long
+        get() = p.getLong("lastUsageReport", 0L)
+        set(v) = p.edit().putLong("lastUsageReport", v).apply()
+    var permLocOk: Boolean
+        get() = p.getBoolean("permLocOk", true)
+        set(v) = p.edit().putBoolean("permLocOk", v).apply()
+    var permUsageOk: Boolean
+        get() = p.getBoolean("permUsageOk", true)
+        set(v) = p.edit().putBoolean("permUsageOk", v).apply()
+    val bonusEntity: String get() = "input_number.guard_bonus_$deviceId"
+    val kidMsgEntity: String get() = "input_text.guard_wiadomosc_$deviceId"
+    val ringEntity: String get() = "input_button.guard_dzwon_$deviceId"
     /** Przycisk w HA (input_button) - jego nacisniecie w Pulse prosi telefon o aktualna pozycje. */
     val locateEntity: String get() = "input_button.lokalizacja_telefon_$deviceId"
 

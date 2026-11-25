@@ -223,6 +223,8 @@ class MainActivity : Activity() {
             val fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
             permCard.addView(Ui.statusRow(this, "Lokalizacja w tle", if (fine && bg) "włączona" + (if (prefs.webhook.isBlank()) " – ale brak webhooka, nic nie jest wysyłane" else "") else "dotknij, aby zezwolić „cały czas”", fine && bg && prefs.webhook.isNotBlank()) { askLocation() })
         }
+        val usage = Usage.hasAccess(this)
+        permCard.addView(Ui.statusRow(this, "Dostęp do danych o użyciu aplikacji", if (usage) "włączony (limity czasu i statystyki)" else "dotknij, aby zezwolić – bez tego nie działają limity czasu", usage) { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) })
         permCard.addView(Ui.statusRow(this, "Powiadomienia", if (notif) "włączone" else "dotknij, aby zezwolić", notif) { if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1) })
         permCard.addView(Ui.statusRow(this, "Bez ograniczeń baterii", if (bat) "włączone" else "dotknij, aby zezwolić (praca w tle)", bat) { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) })
     }
@@ -235,4 +237,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "2.1" }
+object BuildConfigVersion { const val NAME = "2.2" }
