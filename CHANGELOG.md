@@ -2,6 +2,16 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 1.8 – 2026-11-25
+
+**PL**
+- **Ochrona przed odinstalowaniem**: nowy przełącznik „Administrator urządzenia”. Gdy jest włączony, w Ustawieniach przycisk „Odinstaluj” jest nieaktywny, dopóki administrator nie zostanie wyłączony. Z uprawnieniami Device Owner (ADB) odinstalowanie jest blokowane na stałe.
+- Ukryta ikona: jeśli launcher nadal pokazuje starą ikonę (pamięć podręczna), zrestartuj telefon lub launcher; po ukryciu aplikacja nie ma już żadnej aktywności startowej.
+
+**EN**
+- **Uninstall protection**: new “Device administrator” switch. While on, the “Uninstall” button in Settings is disabled until the administrator is turned off. With Device Owner rights (ADB) uninstalling is blocked permanently.
+- Hidden icon: if the launcher still shows a stale icon (cache), restart the phone or launcher; once hidden the app has no launcher activity at all.
+
 ## 1.7 – 2026-11-25
 
 **PL**

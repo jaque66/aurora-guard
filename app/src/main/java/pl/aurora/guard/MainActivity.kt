@@ -25,6 +25,7 @@ class MainActivity : Activity() {
     private lateinit var prefs: Prefs
     private lateinit var statusCard: LinearLayout
     private lateinit var permCard: LinearLayout
+    private var admSw: android.widget.Switch? = null
     private val fields = LinkedHashMap<String, EditText>()
 
     override fun onCreate(b: Bundle?) {
@@ -87,6 +88,25 @@ class MainActivity : Activity() {
         }
         root.addView(icoCard)
 
+        root.addView(Ui.section(this, "Ochrona przed odinstalowaniem"))
+        val admCard = Ui.card(this)
+        val sw2 = android.widget.Switch(this).apply { text = "Administrator urządzenia"; setTextColor(Ui.INK); textSize = 15f; isChecked = adminActive() }
+        admSw = sw2
+        admCard.addView(sw2)
+        admCard.addView(TextView(this).apply {
+            text = "Gdy włączone, w Ustawieniach przycisk „Odinstaluj” jest nieaktywny, dopóki ktoś nie wyłączy tego administratora (Ustawienia → Zabezpieczenia → Administratorzy urządzenia). Pełną, trwałą blokadę daje Device Owner (instrukcja niżej)."
+            textSize = 12f; setTextColor(Ui.INK2); setPadding(0, Ui.dp(this@MainActivity, 8), 0, 0)
+        })
+        sw2.setOnCheckedChangeListener { _, on ->
+            if (on == adminActive()) return@setOnCheckedChangeListener
+            val cn = android.content.ComponentName(this, AdminReceiver::class.java)
+            if (on) startActivity(Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                .putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, cn)
+                .putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Chroni aplikację Aurora Guard przed odinstalowaniem."))
+            else dpm().removeActiveAdmin(cn)
+        }
+        root.addView(admCard)
+
         root.addView(Ui.section(this, "Połączenie z Home Assistantem"))
         val form = Ui.card(this)
         field(form, "url", "Adres Home Assistanta (np. http://192.168.1.10:8123)", prefs.url)
@@ -114,6 +134,9 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply { background = Ui.background(); isFillViewport = true; addView(root) })
         refresh()
     }
+
+    private fun dpm() = getSystemService(android.content.Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
+    private fun adminActive() = dpm().isAdminActive(android.content.ComponentName(this, AdminReceiver::class.java))
 
     private fun alias() = android.content.ComponentName(this, "pl.aurora.guard.LauncherAlias")
     private fun iconHidden(): Boolean = packageManager.getComponentEnabledSetting(alias()) == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
@@ -164,8 +187,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        admSw?.let { if (it.isChecked != adminActive()) it.isChecked = adminActive() }
+        if (dpm().isDeviceOwnerApp(packageName)) try { dpm().setUninstallBlocked(android.content.ComponentName(this, AdminReceiver::class.java), packageName, true) } catch (_: Exception) { }
         if (::statusCard.isInitialized) refresh()
     }
 }
 
-object BuildConfigVersion { const val NAME = "1.7" }
+object BuildConfigVersion { const val NAME = "1.8" }
