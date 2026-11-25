@@ -36,6 +36,14 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         connect()
     }
 
+    /** Zmiana sieci: rozlacz i polacz ponownie (wybierze adres wewnetrzny lub zewnetrzny). */
+    fun reconnect() {
+        if (!running) return
+        backoff = 3000L
+        prefs.probeInternal(true)
+        ws?.cancel()
+    }
+
     fun stop() {
         running = false
         ws?.close(1000, null)
@@ -44,7 +52,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
 
     private fun connect() {
         if (!running || !prefs.configured) return
-        val url = prefs.url.replaceFirst("http", "ws") + "/api/websocket"
+        val url = prefs.activeUrl().replaceFirst("http", "ws") + "/api/websocket"
         ws = http.newWebSocket(Request.Builder().url(url).build(), object : WebSocketListener() {
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try { handle(webSocket, JSONObject(text)) } catch (_: Exception) { }
@@ -134,13 +142,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
     private fun setFull(on: Boolean) { prefs.fullLocked = on; onRules() }
 
     private fun post(path: String, body: JSONObject): Boolean = try {
-        val req = Request.Builder().url(prefs.url + path).header("Authorization", "Bearer " + prefs.token)
+        val req = Request.Builder().url(prefs.activeUrl() + path).header("Authorization", "Bearer " + prefs.token)
             .post(body.toString().toRequestBody("application/json".toMediaType())).build()
         http.newCall(req).execute().use { it.isSuccessful }
     } catch (_: Exception) { false }
 
     private fun hook(body: JSONObject): Boolean = try {
-        val req = Request.Builder().url(prefs.url + "/api/webhook/" + prefs.webhook).post(body.toString().toRequestBody("application/json".toMediaType())).build()
+        val req = Request.Builder().url(prefs.activeUrl() + "/api/webhook/" + prefs.webhook).post(body.toString().toRequestBody("application/json".toMediaType())).build()
         http.newCall(req).execute().use { it.isSuccessful }
     } catch (_: Exception) { false }
 
@@ -164,13 +172,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.8"))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.9"))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.8")
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "1.9")
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

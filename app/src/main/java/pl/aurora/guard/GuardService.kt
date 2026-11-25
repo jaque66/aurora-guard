@@ -18,6 +18,7 @@ class GuardService : Service() {
     override fun onCreate() { super.onCreate(); running = true }
 
     private var client: HaClient? = null
+    private var netCb: android.net.ConnectivityManager.NetworkCallback? = null
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
@@ -38,6 +39,16 @@ class GuardService : Service() {
         if (prefs.configured && client == null) {
             client = HaClient(this) { Policy.apply(this); GuardAccessibilityService.instance?.rulesChanged() }.also { it.start() }
             handler.postDelayed(tick, 20_000L)
+            if (netCb == null && prefs.urlInternal.isNotBlank()) try {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                netCb = object : android.net.ConnectivityManager.NetworkCallback() {
+                    private var last = 0L
+                    private fun change() { val n = System.currentTimeMillis(); if (n - last < 4000) return; last = n; Thread { Thread.sleep(1500); client?.reconnect() }.start() }
+                    override fun onAvailable(network: android.net.Network) { change() }
+                    override fun onLost(network: android.net.Network) { change() }
+                }
+                cm.registerDefaultNetworkCallback(netCb!!)
+            } catch (_: Exception) { }
         }
         Policy.apply(this)
         Watchdog.schedule(this)
@@ -47,6 +58,8 @@ class GuardService : Service() {
     override fun onDestroy() {
         running = false
         handler.removeCallbacks(tick)
+        try { netCb?.let { (getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).unregisterNetworkCallback(it) } } catch (_: Exception) { }
+        netCb = null
         client?.stop(); client = null
         super.onDestroy()
     }

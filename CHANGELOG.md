@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 1.9 – 2026-11-25
+
+**PL**
+- **Połączenie wewnętrzne / zewnętrzne**: nowe pola „Adres wewnętrzny” i „Nazwa domowego Wi-Fi (SSID)”. W domowej sieci aplikacja łączy się z HA adresem wewnętrznym, poza domem zewnętrznym; przełącza się sama przy zmianie sieci. Odczyt nazwy Wi-Fi wymaga uprawnienia lokalizacji (Android tak wymaga); bez niego, albo przy pustej nazwie, aplikacja sprawdza, czy adres wewnętrzny odpowiada. Na ekranie głównym widać aktualny tryb.
+
+**EN**
+- **Internal / external connection**: new “Internal address” and “Home Wi-Fi name (SSID)” fields. On the home network the app uses the internal address, elsewhere the external one, switching automatically when the network changes. Reading the Wi-Fi name needs the location permission (an Android requirement); without it, or with an empty name, the app checks whether the internal address responds. The current mode is shown on the main screen.
+
 ## 1.8 – 2026-11-25
 
 **PL**

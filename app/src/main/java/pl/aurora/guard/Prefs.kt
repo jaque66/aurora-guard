@@ -5,7 +5,62 @@ import android.os.Build
 
 /** Ustawienia aplikacji i ostatnio znane reguly z Home Assistanta (dzialaja tez offline). */
 class Prefs(ctx: Context) {
-    private val p = ctx.applicationContext.getSharedPreferences("guard", Context.MODE_PRIVATE)
+    private val app = ctx.applicationContext
+    private val p = app.getSharedPreferences("guard", Context.MODE_PRIVATE)
+
+    /** Adres wewnetrzny HA (w domowej sieci Wi-Fi); puste = zawsze adres zewnetrzny (url). */
+    var urlInternal: String
+        get() = p.getString("urlInternal", "") ?: ""
+        set(v) = p.edit().putString("urlInternal", v.trim().trimEnd('/')).apply()
+    /** Nazwa (SSID) domowej sieci Wi-Fi. Puste = wykrywanie przez test dostepnosci adresu wewnetrznego. */
+    var homeSsid: String
+        get() = p.getString("homeSsid", "") ?: ""
+        set(v) = p.edit().putString("homeSsid", v.trim()).apply()
+    /** Ostatnio uzyty tryb: "wewnętrzne" / "zewnętrzne". */
+    var urlMode: String
+        get() = p.getString("urlMode", "") ?: ""
+        set(v) = p.edit().putString("urlMode", v).apply()
+    @Volatile private var probeAt = 0L
+    @Volatile private var probeOk = false
+
+    private fun onWifi(): Boolean = try {
+        val cm = app.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        cm.getNetworkCapabilities(cm.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) == true
+    } catch (_: Exception) { false }
+
+    @Suppress("DEPRECATION")
+    private fun currentSsid(): String? = try {
+        if (app.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
+        else {
+            val s = ((app.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager).connectionInfo?.ssid ?: "").trim('"')
+            if (s.isBlank() || s == "<unknown ssid>") null else s
+        }
+    } catch (_: Exception) { null }
+
+    /** Test dostepnosci adresu wewnetrznego (dowolna odpowiedz HTTP = osiagalny). Tylko w watku roboczym; wynik na 60 s. */
+    fun probeInternal(force: Boolean = false): Boolean {
+        if (urlInternal.isBlank()) return false
+        if (!force && System.currentTimeMillis() - probeAt < 60_000L) return probeOk
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return probeOk
+        probeOk = try {
+            val c = java.net.URL(urlInternal + "/api/").openConnection() as java.net.HttpURLConnection
+            c.connectTimeout = 1500; c.readTimeout = 1500; c.requestMethod = "GET"
+            c.responseCode; c.disconnect(); true
+        } catch (_: Exception) { false }
+        probeAt = System.currentTimeMillis()
+        return probeOk
+    }
+
+    /** Adres, ktorego aplikacja uzywa teraz: wewnetrzny w domowym Wi-Fi, w przeciwnym razie zewnetrzny. */
+    fun activeUrl(): String {
+        if (urlInternal.isBlank()) { urlMode = ""; return url }
+        val internal = if (!onWifi()) false else {
+            val ssid = currentSsid()
+            if (homeSsid.isNotBlank() && ssid != null) ssid.equals(homeSsid, ignoreCase = true) else probeInternal()
+        }
+        urlMode = if (internal) "wewnętrzne" else "zewnętrzne"
+        return if (internal) urlInternal else url
+    }
 
     var url: String
         get() = p.getString("url", "") ?: ""

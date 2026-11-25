@@ -109,7 +109,9 @@ class MainActivity : Activity() {
 
         root.addView(Ui.section(this, "Połączenie z Home Assistantem"))
         val form = Ui.card(this)
-        field(form, "url", "Adres Home Assistanta (np. http://192.168.1.10:8123)", prefs.url)
+        field(form, "url", "Adres zewnętrzny Home Assistanta (poza domem, np. https://ha.twojadomena.pl)", prefs.url)
+        field(form, "urli", "Adres wewnętrzny (w domowym Wi-Fi, np. http://192.168.1.10:8123) – opcjonalnie", prefs.urlInternal)
+        field(form, "ssid", "Nazwa domowego Wi-Fi (SSID) – puste = sprawdzanie dostępności adresu wewnętrznego", prefs.homeSsid)
         field(form, "token", "Token dostępu (Profil → Zabezpieczenia → Długoterminowe tokeny)", prefs.token, secret = true)
         field(form, "device", "Identyfikator telefonu (np. dziecko1, dziecko2)", prefs.deviceId)
         val ents = TextView(this).apply { textSize = 11f; setTextColor(Ui.INK2); setPadding(Ui.dp(this@MainActivity, 2), Ui.dp(this@MainActivity, 6), 0, 0) }
@@ -152,7 +154,7 @@ class MainActivity : Activity() {
     }
 
     private fun save() {
-        prefs.url = fields["url"]!!.text.toString(); prefs.token = fields["token"]!!.text.toString(); prefs.deviceId = fields["device"]!!.text.toString(); prefs.webhook = fields["hook"]!!.text.toString()
+        prefs.url = fields["url"]!!.text.toString(); prefs.urlInternal = fields["urli"]!!.text.toString(); prefs.homeSsid = fields["ssid"]!!.text.toString(); prefs.token = fields["token"]!!.text.toString(); prefs.deviceId = fields["device"]!!.text.toString(); prefs.webhook = fields["hook"]!!.text.toString()
         // nazwy encji zawsze wynikaja z identyfikatora telefonu - zmiana identyfikatora zmienia je automatycznie (wlasne nadpisania czyscimy)
         prefs.lockEntity = ""; prefs.fullEntity = ""; prefs.todoEntity = ""; prefs.allowTodo = ""; prefs.rulesEntity = ""
         prefs.message = fields["msg"]!!.text.toString(); prefs.fullMessage = fields["fmsg"]!!.text.toString(); prefs.pin = fields["pin"]!!.text.toString()
@@ -171,7 +173,7 @@ class MainActivity : Activity() {
         val bat = pm.isIgnoringBatteryOptimizations(packageName)
 
         statusCard.removeAllViews()
-        statusCard.addView(Ui.statusRow(this, "Połączenie z HA", if (prefs.connected) "ostatnia synchronizacja $sync" else "brak połączenia – sprawdź adres i token", prefs.connected))
+        statusCard.addView(Ui.statusRow(this, "Połączenie z HA" + (if (prefs.urlInternal.isNotBlank() && prefs.urlMode.isNotBlank()) " (${prefs.urlMode})" else ""), if (prefs.connected) "ostatnia synchronizacja $sync" else "brak połączenia – sprawdź adres i token", prefs.connected))
         statusCard.addView(Ui.statusRow(this, if (prefs.locked) "Blokada WŁĄCZONA" else "Blokada wyłączona", "aplikacji na liście: ${prefs.blocked.size}" + (if (prefs.blocked.isNotEmpty()) "  ${prefs.blocked.take(3)}" else ""), if (prefs.locked) null else true))
         statusCard.addView(Ui.statusRow(this, if (prefs.webhook.isNotBlank()) "Raporty przez webhook" else "Raporty przez REST (admin)", if (prefs.webhook.isNotBlank()) "token może należeć do zwykłego użytkownika" else "token musi należeć do administratora", prefs.webhook.isNotBlank()))
         statusCard.addView(Ui.statusRow(this, "Encje", "${prefs.lockEntity}\n${prefs.todoEntity}", null))
@@ -181,6 +183,10 @@ class MainActivity : Activity() {
         permCard.removeAllViews()
         permCard.addView(Ui.statusRow(this, "Usługa dostępności", if (acc) "włączona" else "dotknij, aby włączyć (Aurora Guard → włącz)", acc) { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) })
         permCard.addView(Ui.statusRow(this, "Ustawienia ograniczone (Android 13+)", "jeśli nie da się włączyć usługi: Info o aplikacji → ⋮ → Zezwól", null) { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) })
+        if (prefs.urlInternal.isNotBlank() && prefs.homeSsid.isNotBlank()) {
+            val loc = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            permCard.addView(Ui.statusRow(this, "Lokalizacja (odczyt nazwy Wi-Fi)", if (loc) "zezwolona" else "dotknij, aby zezwolić – bez tego aplikacja sprawdza dostępność adresu wewnętrznego", loc) { requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 7) })
+        }
         permCard.addView(Ui.statusRow(this, "Powiadomienia", if (notif) "włączone" else "dotknij, aby zezwolić", notif) { if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1) })
         permCard.addView(Ui.statusRow(this, "Bez ograniczeń baterii", if (bat) "włączone" else "dotknij, aby zezwolić (praca w tle)", bat) { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) })
     }
@@ -193,4 +199,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "1.8" }
+object BuildConfigVersion { const val NAME = "1.9" }
