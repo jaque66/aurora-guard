@@ -2,6 +2,16 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 1.7 – 2026-11-25
+
+**PL**
+- **Ukrywanie ikony aplikacji** (ustawienie „Ikona aplikacji” na ekranie głównym aplikacji): ikona znika z ekranu głównego i listy aplikacji. Ustawienia otworzysz z powiadomienia „Aurora Guard działa”, z Ustawienia → Dostępność → Aurora Guard (ikona ⚙) albo kodem `*#*#4827#*#*` wpisanym w aplikacji Telefon (nie działa na każdym telefonie). Usługa dalej działa w tle.
+- **Blokada całego telefonu**: większe odstępy i większe przyciski Telefon, Wiadomości, Kontakty.
+
+**EN**
+- **Hide the app icon** (“App icon” setting on the main screen): the icon disappears from the home screen and the app list. Open the settings from the “Aurora Guard działa” notification, from Settings → Accessibility → Aurora Guard (⚙ icon) or with the code `*#*#4827#*#*` dialled in the Phone app (not supported on every phone). The service keeps running in the background.
+- **Whole-phone lock**: larger spacing and bigger Phone, Messages, Contacts buttons.
+
 ## 1.6 – 2026-11-25
 
 **PL**

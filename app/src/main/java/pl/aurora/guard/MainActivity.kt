@@ -68,6 +68,25 @@ class MainActivity : Activity() {
         root.addView(Ui.section(this, "Uprawnienia"))
         permCard = Ui.card(this); root.addView(permCard)
 
+        root.addView(Ui.section(this, "Ikona aplikacji"))
+        val icoCard = Ui.card(this)
+        val icoSw = android.widget.Switch(this).apply { text = "Ukryj ikonę na ekranie głównym"; setTextColor(Ui.INK); textSize = 15f; isChecked = iconHidden() }
+        icoCard.addView(icoSw)
+        icoCard.addView(TextView(this).apply {
+            text = "Ustawienia otworzysz wtedy: dotykając powiadomienia „Aurora Guard działa”, w Ustawienia → Dostępność → Aurora Guard (ikona ⚙), albo wpisując w aplikacji Telefon kod *#*#4827#*#* (nie działa na każdym telefonie)."
+            textSize = 12f; setTextColor(Ui.INK2); setPadding(0, Ui.dp(this@MainActivity, 8), 0, 0)
+        })
+        icoSw.setOnCheckedChangeListener { v, on ->
+            if (on == iconHidden()) return@setOnCheckedChangeListener
+            if (on) {
+                AlertDialog.Builder(this).setTitle("Ukryć ikonę?")
+                    .setMessage("Ikona zniknie z ekranu głównego i listy aplikacji. Ustawienia otworzysz z powiadomienia „Aurora Guard działa”, z Ustawienia → Dostępność → Aurora Guard albo kodem *#*#4827#*#* w aplikacji Telefon.")
+                    .setPositiveButton("Ukryj") { _, _ -> setIconHidden(true) }
+                    .setNegativeButton("Anuluj") { _, _ -> v.isChecked = false }.show()
+            } else setIconHidden(false)
+        }
+        root.addView(icoCard)
+
         root.addView(Ui.section(this, "Połączenie z Home Assistantem"))
         val form = Ui.card(this)
         field(form, "url", "Adres Home Assistanta (np. http://192.168.1.10:8123)", prefs.url)
@@ -94,6 +113,13 @@ class MainActivity : Activity() {
 
         setContentView(ScrollView(this).apply { background = Ui.background(); isFillViewport = true; addView(root) })
         refresh()
+    }
+
+    private fun alias() = android.content.ComponentName(this, "pl.aurora.guard.LauncherAlias")
+    private fun iconHidden(): Boolean = packageManager.getComponentEnabledSetting(alias()) == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+    private fun setIconHidden(h: Boolean) {
+        packageManager.setComponentEnabledSetting(alias(), if (h) PackageManager.COMPONENT_ENABLED_STATE_DISABLED else PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+        Toast.makeText(this, if (h) "Ikona ukryta (może potrwać chwilę)" else "Ikona widoczna", Toast.LENGTH_SHORT).show()
     }
 
     private fun showChangelog() {
@@ -142,4 +168,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "1.6" }
+object BuildConfigVersion { const val NAME = "1.7" }

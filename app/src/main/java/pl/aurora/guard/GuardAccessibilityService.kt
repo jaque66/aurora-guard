@@ -57,7 +57,8 @@ class GuardAccessibilityService : AccessibilityService() {
             col.addView(Ui.primary(this, label) {
                 val li = packageManager.getLaunchIntentForPackage(pkg)
                 if (li != null) { hideFull(); li.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(li) }
-            }, LinearLayout.LayoutParams((260 * d).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT))
+            }.apply { textSize = 19f; setPadding((16 * d).toInt(), (20 * d).toInt(), (16 * d).toInt(), (20 * d).toInt()) },
+                LinearLayout.LayoutParams((280 * d).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = (30 * d).toInt() })
         }
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
