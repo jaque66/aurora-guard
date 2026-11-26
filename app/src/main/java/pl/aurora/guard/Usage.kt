@@ -59,4 +59,18 @@ object Usage {
         }
         return Triple(today.take(12), today.sumOf { it.third }, week)
     }
+
+    /** Historia: ostatnie 14 dni - data, suma minut i top 8 aplikacji danego dnia (system trzyma dane o uzyciu ok. tygodnia, HA gromadzi je dalej). */
+    fun days(ctx: Context): List<Triple<String, Int, List<Triple<String, String, Int>>>> {
+        val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val pm = ctx.packageManager; val ok = launchable(ctx); val now = System.currentTimeMillis()
+        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+        return (13 downTo 0).mapNotNull { b ->
+            val from = dayStart(b); val to = if (b == 0) now else dayStart(b - 1)
+            val m = try { usm.queryAndAggregateUsageStats(from, to).filter { it.key in ok && it.value.totalTimeInForeground >= 60000 } } catch (_: Exception) { return@mapNotNull null }
+            if (m.isEmpty()) return@mapNotNull null
+            val apps = m.map { (p, s) -> Triple(p, try { pm.getApplicationLabel(pm.getApplicationInfo(p, 0)).toString().take(40) } catch (_: Exception) { p }, (s.totalTimeInForeground / 60000).toInt()) }.sortedByDescending { it.third }
+            Triple(fmt.format(java.util.Date(from + 3600_000L)), apps.sumOf { it.third }, apps.take(8))
+        }
+    }
 }

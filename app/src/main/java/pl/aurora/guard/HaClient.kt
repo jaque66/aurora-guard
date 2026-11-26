@@ -205,7 +205,9 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             val (apps, total, week) = Usage.report(ctx)
             val arr = JSONArray(); apps.forEach { arr.put(JSONObject().put("p", it.first).put("n", it.second).put("m", it.third)) }
             val wk = JSONArray(); week.forEach { wk.put(it) }
-            if (hook(JSONObject().put("type", "usage").put("apps", arr).put("total", total).put("week", wk))) prefs.lastUsageReport = System.currentTimeMillis()
+            val dl = JSONArray()
+            Usage.days(ctx).forEach { d -> val da = JSONArray(); d.third.forEach { da.put(JSONObject().put("n", it.second).put("m", it.third)) }; dl.put(JSONObject().put("d", d.first).put("t", d.second).put("a", da)) }
+            if (hook(JSONObject().put("type", "usage").put("apps", arr).put("total", total).put("week", wk).put("days", dl))) prefs.lastUsageReport = System.currentTimeMillis()
         } catch (_: Exception) { }
     }
 
@@ -237,13 +239,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.2"))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.3"))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.2")
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.3")
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

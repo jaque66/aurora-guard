@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.3 – 2026-11-26
+
+**PL**
+- **Historia użycia aplikacji**: telefon przekazuje do HA czas w aplikacjach z ostatnich 14 dni (top 8 dziennie), a HA gromadzi je dalej. W Pulse można cofać się dzień po dniu (wczoraj, tydzień temu).
+
+**EN**
+- **App usage history**: the phone reports app usage for the last 14 days (top 8 per day) to Home Assistant, which keeps accumulating it. In Pulse you can step back day by day (yesterday, a week ago).
+
 ## 2.2 – 2026-11-26
 
 **PL**
