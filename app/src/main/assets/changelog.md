@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.5 – 2026-11-27
+
+**PL**
+- **Tryb nocny**: w ustawionych godzinach (domyślnie 22:00–06:00) aplikacja rozłącza się z Home Assistantem i nie raportuje, a rano łączy się ponownie. Blokady działają w nocy lokalnie na ostatnio pobranych regułach. Przed uśpieniem aplikacja informuje HA, że telefon śpi (w Pulse widać „śpi do 06:00”, a rodzic nie dostaje fałszywego alarmu o braku kontaktu). Godziny i włączenie ustawia się w aplikacji albo z Home Assistanta.
+
+**EN**
+- **Night mode**: during the configured hours (default 22:00–06:00) the app disconnects from Home Assistant and stops reporting, then reconnects in the morning. Blocking keeps working locally from the last rules. Before sleeping the app tells HA that the phone is asleep (Pulse shows “asleep until 06:00” and parents get no false “no contact” alert). The hours and the switch can be set in the app or from Home Assistant.
+
 ## 2.4 – 2026-11-27
 
 **PL**

@@ -118,6 +118,19 @@ class Prefs(ctx: Context) {
     val setHomeEntity: String get() = "input_number.guard_lok_dom_$deviceId"
     val setMsgEntity: String get() = "input_text.guard_komunikat_$deviceId"
     val setFullMsgEntity: String get() = "input_text.guard_komunikat_caly_$deviceId"
+    /** Tryb nocny: godziny usypiania i budzenia (minuty od polnocy); sterowane takze z HA. */
+    var sleepOn: Boolean
+        get() = p.getBoolean("sleepOn", false)
+        set(v) = p.edit().putBoolean("sleepOn", v).apply()
+    var sleepFrom: Int
+        get() = p.getInt("sleepFrom", 22 * 60)
+        set(v) = p.edit().putInt("sleepFrom", v.coerceIn(0, 1439)).apply()
+    var sleepTo: Int
+        get() = p.getInt("sleepTo", 6 * 60)
+        set(v) = p.edit().putInt("sleepTo", v.coerceIn(0, 1439)).apply()
+    val setSleepEntity: String get() = "input_boolean.guard_sen_$deviceId"
+    val setSleepFromEntity: String get() = "input_datetime.guard_sen_od_$deviceId"
+    val setSleepToEntity: String get() = "input_datetime.guard_sen_do_$deviceId"
     /** Limity czasu dziennie: "pakiet|minuty" (z listy regul w HA), bonusowe minuty na dzis i znaczniki. */
     var limits: Set<String>
         get() = p.getStringSet("limits", emptySet()) ?: emptySet()

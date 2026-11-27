@@ -15,7 +15,7 @@ import androidx.core.app.ServiceCompat
 
 /** Usluga pierwszoplanowa: trzyma polaczenie z HA i co 5 min raportuje status. */
 class GuardService : Service() {
-    override fun onCreate() { super.onCreate(); running = true }
+    override fun onCreate() { super.onCreate(); running = true; instance = this }
 
     private var client: HaClient? = null
     private var netCb: android.net.ConnectivityManager.NetworkCallback? = null
@@ -30,12 +30,41 @@ class GuardService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("guard", "Aurora Guard", NotificationManager.IMPORTANCE_MIN))
-        val n = Notification.Builder(this, "guard").setContentTitle("Aurora Guard działa").setContentText(if (Prefs(this).locEnabled) "Blokady aplikacji i lokalizacja – zarządzane z Home Assistanta" else "Blokady aplikacji zarządzane z Home Assistanta")
-            .setSmallIcon(R.drawable.ic_stat_guard).setOngoing(true)
-            .setContentIntent(android.app.PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)).build()
+        val n = note(normalText())
         if (Build.VERSION.SDK_INT >= 34) ServiceCompat.startForeground(this, 1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(1, n)
+        evaluate()
+        Policy.apply(this)
+        Watchdog.schedule(this)
+        return START_STICKY
+    }
+
+    private fun normalText() = if (Prefs(this).locEnabled) "Blokady aplikacji i lokalizacja – zarządzane z Home Assistanta" else "Blokady aplikacji zarządzane z Home Assistanta"
+    private fun note(text: String): Notification = Notification.Builder(this, "guard").setContentTitle("Aurora Guard działa").setContentText(text)
+        .setSmallIcon(R.drawable.ic_stat_guard).setOngoing(true)
+        .setContentIntent(android.app.PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)).build()
+    private var wasSleep = false
+
+    /** Tryb nocny: w nocy rozlacza sie z HA (po wyslaniu informacji, ze telefon spi), rano laczy sie ponownie. Blokady dzialaja lokalnie. */
+    fun evaluate() {
         val prefs = Prefs(this)
+        Sleep.scheduleNext(this)
+        val sleeping = Sleep.isNow(prefs)
+        if (sleeping) {
+            handler.removeCallbacks(tick)
+            try { netCb?.let { (getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).unregisterNetworkCallback(it) } } catch (_: Exception) { }
+            netCb = null
+            val c = client; client = null
+            if (c != null) Thread { c.reportStatus(Sleep.wakeAt(prefs) / 1000 + 1800); c.stop() }.start()
+            val t = Sleep.wakeAt(prefs)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val cal = java.util.Calendar.getInstance().apply { timeInMillis = t }
+            val n = note("Tryb nocny – połączenie z HA wróci o " + String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE)))
+            nm.notify(1, n)
+            wasSleep = true
+            return
+        }
+        if (wasSleep) { wasSleep = false; (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(1, note(normalText())) }
         if (prefs.configured && client == null) {
             client = HaClient(this) { Policy.apply(this); GuardAccessibilityService.instance?.rulesChanged() }.also { it.start() }
             handler.postDelayed(tick, 20_000L)
@@ -50,13 +79,10 @@ class GuardService : Service() {
                 cm.registerDefaultNetworkCallback(netCb!!)
             } catch (_: Exception) { }
         }
-        Policy.apply(this)
-        Watchdog.schedule(this)
-        return START_STICKY
     }
 
     override fun onDestroy() {
-        running = false
+        running = false; instance = null
         handler.removeCallbacks(tick)
         try { netCb?.let { (getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).unregisterNetworkCallback(it) } } catch (_: Exception) { }
         netCb = null
@@ -68,6 +94,7 @@ class GuardService : Service() {
 
     companion object {
         @Volatile var running = false
+        @Volatile var instance: GuardService? = null
         fun start(ctx: Context) {
             val i = Intent(ctx, GuardService::class.java)
             try { if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i) else ctx.startService(i) } catch (_: Exception) { }

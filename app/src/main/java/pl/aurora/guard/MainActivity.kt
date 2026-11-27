@@ -107,6 +107,24 @@ class MainActivity : Activity() {
         }
         root.addView(admCard)
 
+        root.addView(Ui.section(this, "Tryb nocny"))
+        val slCard = Ui.card(this)
+        val slSw = android.widget.Switch(this).apply { text = "Usypiaj aplikację na noc (oszczędność baterii)"; setTextColor(Ui.INK); textSize = 15f; isChecked = prefs.sleepOn }
+        slCard.addView(slSw)
+        fun hm(m: Int) = String.format("%02d:%02d", m / 60, m % 60)
+        val btFrom = Ui.secondary(this, "Usypianie: " + hm(prefs.sleepFrom)) { }
+        val btTo = Ui.secondary(this, "Budzenie: " + hm(prefs.sleepTo)) { }
+        fun applySleep() { btFrom.text = "Usypianie: " + hm(prefs.sleepFrom); btTo.text = "Budzenie: " + hm(prefs.sleepTo); GuardService.instance?.evaluate() ?: GuardService.start(this) }
+        btFrom.setOnClickListener { android.app.TimePickerDialog(this, { _, h, m -> prefs.sleepFrom = h * 60 + m; applySleep() }, prefs.sleepFrom / 60, prefs.sleepFrom % 60, true).show() }
+        btTo.setOnClickListener { android.app.TimePickerDialog(this, { _, h, m -> prefs.sleepTo = h * 60 + m; applySleep() }, prefs.sleepTo / 60, prefs.sleepTo % 60, true).show() }
+        slCard.addView(btFrom); slCard.addView(btTo)
+        slCard.addView(TextView(this).apply {
+            text = "W nocy telefon rozłącza się z Home Assistantem i nie raportuje; blokady nadal działają lokalnie na ostatnio pobranych regułach. Rano łączy się ponownie. Godziny można też ustawić z Home Assistanta."
+            textSize = 12f; setTextColor(Ui.INK2); setPadding(0, Ui.dp(this@MainActivity, 8), 0, 0)
+        })
+        slSw.setOnCheckedChangeListener { _, on -> prefs.sleepOn = on; applySleep() }
+        root.addView(slCard)
+
         root.addView(Ui.section(this, "Lokalizacja"))
         val locCard = Ui.card(this)
         val sw3 = android.widget.Switch(this).apply { text = "Wysyłaj lokalizację do Home Assistanta"; setTextColor(Ui.INK); textSize = 15f; isChecked = prefs.locEnabled }
@@ -237,4 +255,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "2.4" }
+object BuildConfigVersion { const val NAME = "2.5" }
