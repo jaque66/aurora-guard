@@ -79,7 +79,8 @@ object Ui {
         val d = dp(act, 1)
         val et = EditText(act).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; hint = "PIN"; textSize = 34f; gravity = Gravity.CENTER
-            setTextColor(INK); setHintTextColor(INK2); letterSpacing = 0.3f; setSingleLine()
+            setTextColor(INK); setHintTextColor(INK2); letterSpacing = 0.3f; maxLines = 1
+            transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()   /* setSingleLine() nadpisywalo maskowanie cyfr */
             background = round(act, Color.parseColor("#1AFFFFFF"), 16, Color.parseColor("#33FFFFFF"))
             setPadding(24 * d, 22 * d, 24 * d, 22 * d); minWidth = 260 * d
         }

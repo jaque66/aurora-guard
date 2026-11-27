@@ -121,4 +121,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "2.7" }
+object BuildConfigVersion { const val NAME = "2.7.1" }

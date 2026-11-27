@@ -2,6 +2,14 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.7.1 – 2026-11-27
+
+**PL**
+- Okno PIN-u: wpisywane cyfry są ukryte (kropki).
+
+**EN**
+- PIN dialog: typed digits are now masked (dots).
+
 ## 2.7 – 2026-11-27
 
 **PL**
