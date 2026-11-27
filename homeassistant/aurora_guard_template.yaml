@@ -62,3 +62,21 @@
         limits: >-
           {% set ns = namespace(l=[]) %}{% for i in blk['todo.guard_CHILD']['items'] %}{% set q = i.summary.split('|') %}{% if q | length >= 3 and q[2] | trim | int(0) > 0 %}{% set ns.l = ns.l + [(q[0] | trim) ~ '|' ~ (q[2] | trim | int(0))] %}{% endif %}{% endfor %}{{ ns.l }}
         allowed: "{{ alw['todo.guard_CHILD_dozwolone']['items'] | map(attribute='summary') | map('regex_replace', '[|].*$', '') | list }}"
+
+# Pozycja telefonu: szablonowy device_tracker (zamiast przestarzalego device_tracker.see; HA 2026.6+)
+- triggers:
+    - trigger: webhook
+      webhook_id: WEBHOOK_ID
+      local_only: false
+      allowed_methods: [POST]
+  conditions:
+    - condition: template
+      value_template: "{{ trigger.json.type | default('') == 'location' }}"
+  device_tracker:
+    - name: "Aurora Guard CHILD"
+      unique_id: aurora_guard_CHILD_gps
+      default_entity_id: device_tracker.guard_CHILD
+      icon: mdi:cellphone-marker
+      latitude: "{{ trigger.json.lat | float(0) }}"
+      longitude: "{{ trigger.json.lon | float(0) }}"
+      location_accuracy: "{{ trigger.json.acc | default(50) | float(50) }}"
