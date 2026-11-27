@@ -27,6 +27,13 @@ class GuardService : Service() {
         }
     }
 
+    /** Wywolywane z alarmu (HeartbeatReceiver): wznow polaczenie, jesli padlo, i wyslij status. */
+    fun heartbeat() {
+        val c = client ?: return
+        if (!Prefs(this).connected) c.reconnect()
+        c.maybeStatus(); c.maybeLocate(); c.maybeUsage()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("guard", "Aurora Guard", NotificationManager.IMPORTANCE_MIN))
@@ -36,6 +43,7 @@ class GuardService : Service() {
         evaluate()
         Policy.apply(this)
         Watchdog.schedule(this)
+        Heartbeat.schedule(this)
         return START_STICKY
     }
 

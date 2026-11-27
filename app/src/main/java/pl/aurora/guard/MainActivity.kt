@@ -222,7 +222,7 @@ class MainActivity : Activity() {
         val bat = pm.isIgnoringBatteryOptimizations(packageName)
 
         statusCard.removeAllViews()
-        statusCard.addView(Ui.statusRow(this, "Połączenie z HA" + (if (prefs.urlInternal.isNotBlank() && prefs.urlMode.isNotBlank()) " (${prefs.urlMode})" else ""), if (prefs.connected) "ostatnia synchronizacja $sync" else "brak połączenia – sprawdź adres i token", prefs.connected))
+        statusCard.addView(Ui.statusRow(this, "Połączenie z HA" + (if (prefs.urlInternal.isNotBlank() && prefs.urlMode.isNotBlank()) " (${prefs.urlMode})" else ""), if (prefs.connected) "ostatnia synchronizacja $sync" else if (prefs.authRejected) "Home Assistant odrzucił token – utwórz nowy (Profil → Zabezpieczenia) i wklej go w ustawieniach" else "brak połączenia – sprawdź adres i token", prefs.connected))
         statusCard.addView(Ui.statusRow(this, if (prefs.locked) "Blokada WŁĄCZONA" else "Blokada wyłączona", "aplikacji na liście: ${prefs.blocked.size}" + (if (prefs.blocked.isNotEmpty()) "  ${prefs.blocked.take(3)}" else ""), if (prefs.locked) null else true))
         statusCard.addView(Ui.statusRow(this, if (prefs.webhook.isNotBlank()) "Raporty przez webhook" else "Raporty przez REST (admin)", if (prefs.webhook.isNotBlank()) "token może należeć do zwykłego użytkownika" else "token musi należeć do administratora", prefs.webhook.isNotBlank()))
         statusCard.addView(Ui.statusRow(this, "Encje", "${prefs.lockEntity}\n${prefs.todoEntity}", null))
@@ -255,4 +255,4 @@ class MainActivity : Activity() {
     }
 }
 
-object BuildConfigVersion { const val NAME = "2.5" }
+object BuildConfigVersion { const val NAME = "2.6" }

@@ -37,13 +37,13 @@ class Prefs(ctx: Context) {
         }
     } catch (_: Exception) { null }
 
-    /** Test dostepnosci adresu wewnetrznego (dowolna odpowiedz HTTP = osiagalny). Tylko w watku roboczym; wynik na 60 s. */
+    /** Test dostepnosci adresu wewnetrznego (dowolna odpowiedz HTTP = osiagalny; publiczny /manifest.json, zeby HA nie logowal "invalid authentication" z /api/ bez tokenu). Tylko w watku roboczym; wynik na 60 s. */
     fun probeInternal(force: Boolean = false): Boolean {
         if (urlInternal.isBlank()) return false
         if (!force && System.currentTimeMillis() - probeAt < 60_000L) return probeOk
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return probeOk
         probeOk = try {
-            val c = java.net.URL(urlInternal + "/api/").openConnection() as java.net.HttpURLConnection
+            val c = java.net.URL(urlInternal + "/manifest.json").openConnection() as java.net.HttpURLConnection
             c.connectTimeout = 1500; c.readTimeout = 1500; c.requestMethod = "GET"
             c.responseCode; c.disconnect(); true
         } catch (_: Exception) { false }
@@ -197,6 +197,10 @@ class Prefs(ctx: Context) {
     var connected: Boolean
         get() = p.getBoolean("connected", false)
         set(v) = p.edit().putBoolean("connected", v).apply()
+    /** HA odpowiedzial auth_invalid: token jest zly albo odwolany (pokazywane w statusie zamiast ogolnego "brak polaczenia"). */
+    var authRejected: Boolean
+        get() = p.getBoolean("authRejected", false)
+        set(v) = p.edit().putBoolean("authRejected", v).apply()
     var lastSync: Long
         get() = p.getLong("lastSync", 0L)
         set(v) = p.edit().putLong("lastSync", v).apply()

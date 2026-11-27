@@ -2,6 +2,18 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.6 – 2026-11-27
+
+**PL**
+- **Stabilniejsze raportowanie**: heartbeat budzony przez alarm systemowy (działa też przy wygaszonym ekranie i w trybie oszczędzania), z automatycznym wznowieniem połączenia z HA i usługi, gdy system je zatrzymał. Telefon nie powinien już „znikać” jako offline po kilkudziesięciu minutach bezczynności.
+- Sprawdzanie adresu domowego nie wywołuje już w HA wpisów „invalid authentication”.
+- Gdy HA odrzuci token, status w aplikacji mówi o tym wprost.
+
+**EN**
+- **More reliable reporting**: the heartbeat is driven by a system alarm (works with the screen off and in battery saver), and the HA connection and service are restarted if the system stopped them. The phone should no longer drop to offline after tens of minutes of inactivity.
+- Home-address probing no longer causes “invalid authentication” entries in HA.
+- When HA rejects the token, the app status says so explicitly.
+
 ## 2.5 – 2026-11-27
 
 **PL**
