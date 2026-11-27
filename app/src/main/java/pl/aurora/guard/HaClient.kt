@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 /** Polaczenie z Home Assistantem: WebSocket (reguly na zywo) + REST (raport aplikacji i statusu). */
 class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
     private val prefs = Prefs(ctx)
-    private val http = OkHttpClient.Builder().pingInterval(30, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS).build()
+    private val http = OkHttpClient.Builder().pingInterval(90, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS).build()
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var ws: WebSocket? = null
     @Volatile private var running = false
@@ -76,8 +76,8 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             "auth_required" -> send(w, JSONObject().put("type", "auth").put("access_token", prefs.token))
             "auth_ok" -> {
                 backoff = 3000L; prefs.connected = true
-                send(w, JSONObject().put("id", 1).put("type", "get_states"))
-                send(w, JSONObject().put("id", 2).put("type", "subscribe_events").put("event_type", "state_changed"))
+                ents.clear()
+                send(w, JSONObject().put("id", 2).put("type", "subscribe_entities").put("entity_ids", JSONArray(watched())))   /* tylko nasze encje - bez lawiny zdarzen z calego HA */
                 requestTodo(w)
                 send(w, JSONObject().put("id", 4).put("type", "todo/item/list").put("entity_id", prefs.allowTodo))
                 Thread { reportApps(); reportStatus() }.start()
@@ -86,16 +86,6 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             "result" -> {
                 if (!m.optBoolean("success")) return
                 when (m.optInt("id")) {
-                    1 -> {
-                        val arr = m.optJSONArray("result") ?: return
-                        for (i in 0 until arr.length()) {
-                            val s = arr.getJSONObject(i)
-                            applySetting(s.optString("entity_id"), s.optString("state"))
-                            if (s.optString("entity_id") == prefs.lockEntity) setLock(s.optString("state") == "on")
-                            if (s.optString("entity_id") == prefs.fullEntity) setFull(s.optString("state") == "on")
-                            if (s.optString("entity_id") == prefs.rulesEntity) rules(s.optJSONObject("attributes"))
-                        }
-                    }
                     4 -> {
                         val items = m.optJSONObject("result")?.optJSONArray("items") ?: return
                         val set = HashSet<String>()
@@ -121,17 +111,34 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
                 }
             }
             "event" -> {
-                val d = m.optJSONObject("event")?.optJSONObject("data") ?: return
-                val id = d.optString("entity_id")
-                applySetting(id, d.optJSONObject("new_state")?.optString("state") ?: "")
-                if (id == prefs.lockEntity) setLock(d.optJSONObject("new_state")?.optString("state") == "on")
-                else if (id == prefs.fullEntity) setFull(d.optJSONObject("new_state")?.optString("state") == "on")
-                else if (id == prefs.rulesEntity) rules(d.optJSONObject("new_state")?.optJSONObject("attributes"))
-                else if (id == prefs.locateEntity) reportLocation("zadanie")
-                else if (id == prefs.ringEntity) Alarm.toggle(ctx)
-                else if (id == prefs.todoEntity) requestTodo(w)
-                else if (id == prefs.allowTodo) send(w, JSONObject().put("id", 4).put("type", "todo/item/list").put("entity_id", prefs.allowTodo))
+                val ev = m.optJSONObject("event") ?: return
+                ev.optJSONObject("a")?.let { a -> a.keys().forEach { id -> val o = a.getJSONObject(id); onEnt(w, id, o.optString("s"), o.optJSONObject("a") ?: JSONObject(), true) } }
+                ev.optJSONObject("c")?.let { c -> c.keys().forEach { id ->
+                    val o = c.getJSONObject(id); val prev = ents[id]; var st = prev?.first ?: ""; val at = prev?.second ?: JSONObject()
+                    o.optJSONObject("+")?.let { p -> if (p.has("s")) st = p.optString("s"); p.optJSONObject("a")?.let { pa -> pa.keys().forEach { k -> at.put(k, pa.get(k)) } } }
+                    o.optJSONObject("-")?.optJSONArray("a")?.let { rm -> for (i in 0 until rm.length()) at.remove(rm.optString(i)) }
+                    onEnt(w, id, st, at, false)
+                } }
             }
+        }
+    }
+
+    private val ents = HashMap<String, Pair<String, JSONObject>>()
+    private fun watched(): List<String> = listOf(prefs.lockEntity, prefs.fullEntity, prefs.rulesEntity, prefs.todoEntity, prefs.allowTodo, prefs.locateEntity, prefs.ringEntity,
+        prefs.setLocEntity, prefs.setAwayEntity, prefs.setHomeEntity, prefs.setMsgEntity, prefs.setFullMsgEntity, prefs.bonusEntity, prefs.kidMsgEntity)
+
+    /** Zmiana (lub stan poczatkowy) obserwowanej encji. Przyciski (znajdz telefon / lokalizacja) reaguja tylko na nowe nacisniecia. */
+    private fun onEnt(w: WebSocket, id: String, st: String, at: JSONObject, initial: Boolean) {
+        ents[id] = st to at
+        applySetting(id, st)
+        when (id) {
+            prefs.lockEntity -> setLock(st == "on")
+            prefs.fullEntity -> setFull(st == "on")
+            prefs.rulesEntity -> rules(at)
+            prefs.locateEntity -> if (!initial) reportLocation("zadanie")
+            prefs.ringEntity -> if (!initial) Alarm.toggle(ctx)
+            prefs.todoEntity -> if (!initial) requestTodo(w)
+            prefs.allowTodo -> if (!initial) send(w, JSONObject().put("id", 4).put("type", "todo/item/list").put("entity_id", prefs.allowTodo))
         }
     }
 
@@ -182,7 +189,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
     /** Wysyla polozenie przez webhook (HA zapisuje je jako device_tracker). */
     fun reportLocation(reason: String) {
         if (!prefs.locEnabled || prefs.webhook.isBlank()) return
-        Loc.get(ctx) { l ->
+        Loc.get(ctx, reason == "zadanie") { l ->
             if (l == null) return@get
             Thread {
                 val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -200,13 +207,16 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             val loc = ctx.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
             if (prefs.permLocOk != loc) { if (!loc) Hook.tamper(ctx, "Cofnięto uprawnienie lokalizacji"); prefs.permLocOk = loc }
         }
-        if (!acc || prefs.webhook.isBlank() || System.currentTimeMillis() - prefs.lastUsageReport < 14 * 60_000L) return
+        if (!acc || prefs.webhook.isBlank() || System.currentTimeMillis() - prefs.lastUsageReport < 27 * 60_000L) return
         try {
-            val (apps, total, week) = Usage.report(ctx)
+            val (apps, total, _) = Usage.report(ctx)
+            val days = Usage.days(ctx)
+            val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val week = (6 downTo 0).map { b -> val d = fmt.format(Date(System.currentTimeMillis() - b * 86_400_000L)); days.firstOrNull { it.first == d }?.second ?: 0 }
             val arr = JSONArray(); apps.forEach { arr.put(JSONObject().put("p", it.first).put("n", it.second).put("m", it.third)) }
             val wk = JSONArray(); week.forEach { wk.put(it) }
             val dl = JSONArray()
-            Usage.days(ctx).forEach { d -> val da = JSONArray(); d.third.forEach { da.put(JSONObject().put("n", it.second).put("m", it.third)) }; dl.put(JSONObject().put("d", d.first).put("t", d.second).put("a", da)) }
+            days.forEach { d -> val da = JSONArray(); d.third.forEach { da.put(JSONObject().put("n", it.second).put("m", it.third)) }; dl.put(JSONObject().put("d", d.first).put("t", d.second).put("a", da)) }
             if (hook(JSONObject().put("type", "usage").put("apps", arr).put("total", total).put("week", wk).put("days", dl))) prefs.lastUsageReport = System.currentTimeMillis()
         } catch (_: Exception) { }
     }
@@ -232,20 +242,25 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             .put("attributes", JSONObject().put("apps", arr).put("friendly_name", "Aurora Guard – aplikacje (${prefs.deviceId})").put("icon", "mdi:apps")))
     }
 
+    private var lastStatus = 0L
+    /** Raport statusu (heartbeat) co ~10 min zamiast co 5 - mniej wybudzen radia. */
+    fun maybeStatus() { if (System.currentTimeMillis() - lastStatus < 9 * 60_000L) return; reportStatus() }
+
     fun reportStatus() {
+        lastStatus = System.currentTimeMillis()
         val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val acc = GuardAccessibilityService.instance != null
         val iso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).apply { timeZone = TimeZone.getDefault() }.format(Date())
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.3"))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.4"))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.3")
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.4")
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

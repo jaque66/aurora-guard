@@ -107,7 +107,7 @@ class GuardAccessibilityService : AccessibilityService() {
             lastWarn = System.currentTimeMillis()
             android.widget.Toast.makeText(this, "Zostało $left min w tej aplikacji", android.widget.Toast.LENGTH_LONG).show()
         }
-        handler.postDelayed(limitTick, 20_000L)
+        handler.postDelayed(limitTick, 30_000L)
     }
     private var lastWarn = 0L
 

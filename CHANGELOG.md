@@ -2,6 +2,18 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.4 – 2026-11-27
+
+**PL**
+- **Mniejsze zużycie baterii.** Aplikacja nasłuchuje w Home Assistancie tylko własnych encji (wcześniej odbierała wszystkie zmiany stanów w całym domu), raport statusu wysyła co 10 minut zamiast co 5, utrzymuje połączenie rzadszym sygnałem „ping” (co 90 s) i liczy statystyki mniejszą liczbą zapytań.
+- **Lokalizacja oszczędniej**: automatyczne raporty używają najpierw sieci (Wi‑Fi / komórkowa), a GPS włączają tylko, gdy dokładność jest słaba. Na prośbę rodzica („Gdzie jest telefon?”) nadal używany jest GPS.
+- Sprawdzanie limitów czasu co 30 s zamiast co 20 s.
+
+**EN**
+- **Lower battery use.** The app now listens to Home Assistant for its own entities only (it used to receive every state change in the house), sends the status report every 10 minutes instead of 5, keeps the connection alive with a less frequent ping (every 90 s) and computes statistics with fewer queries.
+- **Cheaper location**: automatic reports use the network first (Wi‑Fi / cellular) and turn GPS on only when the accuracy is poor. On a parent’s request (“Where is the phone?”) GPS is still used.
+- Time-limit checks every 30 s instead of 20 s.
+
 ## 2.3 – 2026-11-26
 
 **PL**

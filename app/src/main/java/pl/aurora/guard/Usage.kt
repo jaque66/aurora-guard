@@ -53,11 +53,7 @@ object Usage {
         val today = usm.queryAndAggregateUsageStats(dayStart(), now).filter { it.key in ok && it.value.totalTimeInForeground >= 60000 }
             .map { (p, s) -> Triple(p, try { pm.getApplicationLabel(pm.getApplicationInfo(p, 0)).toString().take(40) } catch (_: Exception) { p }, (s.totalTimeInForeground / 60000).toInt()) }
             .sortedByDescending { it.third }
-        val week = (6 downTo 0).map { b ->
-            val from = dayStart(b); val to = if (b == 0) now else dayStart(b - 1)
-            (usm.queryAndAggregateUsageStats(from, to).filter { it.key in ok }.values.sumOf { it.totalTimeInForeground } / 60000).toInt()
-        }
-        return Triple(today.take(12), today.sumOf { it.third }, week)
+        return Triple(today.take(12), today.sumOf { it.third }, emptyList<Int>())
     }
 
     /** Historia: ostatnie 14 dni - data, suma minut i top 8 aplikacji danego dnia (system trzyma dane o uzyciu ok. tygodnia, HA gromadzi je dalej). */
