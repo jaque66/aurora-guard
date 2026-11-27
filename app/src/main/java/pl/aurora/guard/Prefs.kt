@@ -201,6 +201,9 @@ class Prefs(ctx: Context) {
     var authRejected: Boolean
         get() = p.getBoolean("authRejected", false)
         set(v) = p.edit().putBoolean("authRejected", v).apply()
+    var lastHealNote: Long
+        get() = p.getLong("lastHealNote", 0L)
+        set(v) = p.edit().putLong("lastHealNote", v).apply()
     var lastSync: Long
         get() = p.getLong("lastSync", 0L)
         set(v) = p.edit().putLong("lastSync", v).apply()

@@ -31,14 +31,7 @@ class UpdateActivity : Activity() {
         prefs = Prefs(this)
         window.statusBarColor = android.graphics.Color.parseColor("#060A18")
         window.navigationBarColor = android.graphics.Color.parseColor("#0A1230")
-        if (prefs.pin.isNotEmpty()) askPin() else build()
-    }
-
-    private fun askPin() {
-        val et = EditText(this).apply { inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; hint = "PIN rodzica" }
-        AlertDialog.Builder(this).setTitle("Aurora Guard").setView(et).setCancelable(false)
-            .setPositiveButton("OK") { _, _ -> if (et.text.toString() == prefs.pin) build() else { Toast.makeText(this, "Zły PIN", Toast.LENGTH_SHORT).show(); finish() } }
-            .setNegativeButton("Anuluj") { _, _ -> finish() }.show()
+        build()
     }
 
     private fun build() {

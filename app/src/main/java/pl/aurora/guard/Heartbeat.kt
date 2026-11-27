@@ -24,8 +24,9 @@ class HeartbeatReceiver : BroadcastReceiver() {
         if (!prefs.configured) return
         Heartbeat.schedule(ctx)
         if (Sleep.isNow(prefs)) return
+        try { Heal.check(ctx, "heartbeat") } catch (_: Throwable) { }
         val s = GuardService.instance
-        if (s == null) { GuardService.start(ctx); return }
+        if (s == null) { AppLog.w(ctx, "heartbeat", "usluga nie dziala - uruchamiam"); GuardService.start(ctx); return }
         val pr = goAsync()
         Thread { try { s.heartbeat() } catch (_: Exception) { } finally { pr.finish() } }.start()
     }

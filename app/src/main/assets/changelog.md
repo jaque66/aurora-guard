@@ -2,6 +2,20 @@
 
 Wersjonowanie / Versioning: 1.0 → 1.1 → 1.2 … (każda poprawka podbija wersję o 0.1; większa zmiana tylko na wyraźne polecenie właściciela / each fix bumps the version by 0.1; bigger jumps only when the owner decides).
 
+## 2.7 – 2026-11-27
+
+**PL**
+- **Nowy układ**: ekran główny pokazuje tylko **Stan** i **Uprawnienia**; pozostałe sekcje (ikona, ochrona przed odinstalowaniem, tryb nocny, lokalizacja, połączenie z HA, aktualizacje, historia zmian) są w **Ustawieniach** – ikona ⚙ w prawym górnym rogu.
+- **Większe okno PIN-u** (duże pole i cyfry).
+- **Logi aplikacji** (Ustawienia → Logi aplikacji): zdarzenia usług, połączenia z HA i awarie, z kopiowaniem do schowka.
+- **Usługa dostępności po aktualizacji**: błąd uruchamiania usługi pierwszoplanowej nie zabija już procesu (a z nim usługi dostępności); aplikacja wykrywa wyłączoną usługę i włącza ją sama (po jednorazowym `adb shell pm grant pl.aurora.guard android.permission.WRITE_SECURE_SETTINGS`) albo wysyła powiadomienie „włącz usługę dostępności”.
+
+**EN**
+- **New layout**: the main screen shows only **Status** and **Permissions**; all other sections (icon, uninstall protection, night mode, location, HA connection, updates, changelog) are under **Settings** – the ⚙ icon in the top right.
+- **Bigger PIN dialog** (large field and digits).
+- **App logs** (Settings → App logs): service events, HA connection and crashes, with copy to clipboard.
+- **Accessibility service after an update**: a failing foreground-service start no longer kills the process (and the accessibility service with it); the app detects a disabled service and re-enables it itself (after a one-time `adb shell pm grant pl.aurora.guard android.permission.WRITE_SECURE_SETTINGS`) or posts a “turn on the accessibility service” notification.
+
 ## 2.6 – 2026-11-27
 
 **PL**

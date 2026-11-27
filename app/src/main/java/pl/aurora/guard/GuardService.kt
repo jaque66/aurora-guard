@@ -38,10 +38,14 @@ class GuardService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("guard", "Aurora Guard", NotificationManager.IMPORTANCE_MIN))
         val n = note(normalText())
-        if (Build.VERSION.SDK_INT >= 34) ServiceCompat.startForeground(this, 1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        else startForeground(1, n)
-        evaluate()
-        Policy.apply(this)
+        try {
+            if (Build.VERSION.SDK_INT >= 34) ServiceCompat.startForeground(this, 1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            else startForeground(1, n)
+            AppLog.i(this, "service", "usluga pierwszoplanowa uruchomiona")
+        } catch (e: Throwable) {
+            AppLog.e(this, "service", "startForeground odrzucony przez system - dzialam bez powiadomienia", e)   // dawniej: wyjatek zabijal proces razem z usluga dostepnosci
+        }
+        try { evaluate(); Policy.apply(this) } catch (e: Throwable) { AppLog.e(this, "service", "evaluate/Policy", e) }
         Watchdog.schedule(this)
         Heartbeat.schedule(this)
         return START_STICKY

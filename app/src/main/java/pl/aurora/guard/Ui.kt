@@ -74,6 +74,26 @@ object Ui {
         setOnClickListener { onClick() }
     }
 
+    /** Okno PIN-u rodzica: duze pole z duza czcionka, srodkowane, wygodne dla palca. */
+    fun askPin(act: android.app.Activity, pin: String, ok: () -> Unit, cancel: () -> Unit) {
+        val d = dp(act, 1)
+        val et = EditText(act).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; hint = "PIN"; textSize = 34f; gravity = Gravity.CENTER
+            setTextColor(INK); setHintTextColor(INK2); letterSpacing = 0.3f; setSingleLine()
+            background = round(act, Color.parseColor("#1AFFFFFF"), 16, Color.parseColor("#33FFFFFF"))
+            setPadding(24 * d, 22 * d, 24 * d, 22 * d); minWidth = 260 * d
+        }
+        val box = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; setPadding(24 * d, 12 * d, 24 * d, 4 * d); addView(et, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)) }
+        val dlg = android.app.AlertDialog.Builder(act, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle("PIN rodzica").setView(box).setCancelable(false)
+            .setPositiveButton("OK", null).setNegativeButton("Anuluj") { _, _ -> cancel() }.create()
+        dlg.setOnShowListener {
+            dlg.getButton(android.app.AlertDialog.BUTTON_POSITIVE).apply { textSize = 18f; setOnClickListener { if (et.text.toString() == pin) { dlg.dismiss(); ok() } else { et.setText(""); et.error = "Zły PIN" } } }
+            dlg.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).textSize = 18f
+            et.requestFocus(); dlg.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        }
+        dlg.show()
+    }
+
     /** Wiersz z kropka statusu; klikniecie (opcjonalne) otwiera odpowiednie ustawienie. */
     fun statusRow(ctx: Context, title: String, detail: String, state: Boolean?, onClick: (() -> Unit)? = null): View = LinearLayout(ctx).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL

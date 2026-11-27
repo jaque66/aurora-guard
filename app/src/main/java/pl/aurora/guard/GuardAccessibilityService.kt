@@ -20,7 +20,8 @@ class GuardAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
-        if (Prefs(this).configured) { GuardService.start(this); Watchdog.schedule(this) }
+        AppLog.i(this, "acc", "usluga dostepnosci polaczona")
+        try { if (Prefs(this).configured) { GuardService.start(this); Watchdog.schedule(this); Heartbeat.schedule(this) } } catch (e: Throwable) { AppLog.e(this, "acc", "start uslug po polaczeniu", e) }
     }
 
     private var fullView: View? = null
@@ -173,9 +174,10 @@ class GuardAccessibilityService : AccessibilityService() {
         try { (getSystemService(WINDOW_SERVICE) as WindowManager).removeView(v) } catch (_: Exception) { }
     }
 
-    override fun onInterrupt() {}
+    override fun onInterrupt() { AppLog.w(this, "acc", "onInterrupt") }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
+        AppLog.w(this, "acc", "usluga dostepnosci odlaczona (onUnbind)")
         if (Prefs(this).configured) Hook.tamper(this, "Usługa dostępności Aurora Guard została wyłączona na telefonie")
         instance = null; hideOverlay(); hideFull()
         return super.onUnbind(intent)

@@ -57,7 +57,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try { handle(webSocket, JSONObject(text)) } catch (_: Exception) { }
             }
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { lost() }
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { AppLog.w(ctx, "ha", "polaczenie przerwane: ${t.javaClass.simpleName} ${t.message ?: ""}".take(160)); lost() }
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { lost() }
         })
     }
@@ -75,6 +75,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         when (m.optString("type")) {
             "auth_required" -> send(w, JSONObject().put("type", "auth").put("access_token", prefs.token))
             "auth_ok" -> {
+                AppLog.i(ctx, "ha", "polaczono z HA (${prefs.urlMode.ifBlank { "adres glowny" }})")
                 backoff = 3000L; prefs.connected = true; prefs.authRejected = false
                 ents.clear()
                 send(w, JSONObject().put("id", 2).put("type", "subscribe_entities").put("entity_ids", JSONArray(watched())))   /* tylko nasze encje - bez lawiny zdarzen z calego HA */
@@ -82,7 +83,7 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
                 send(w, JSONObject().put("id", 4).put("type", "todo/item/list").put("entity_id", prefs.allowTodo))
                 Thread { reportApps(); reportStatus() }.start()
             }
-            "auth_invalid" -> { prefs.connected = false; prefs.authRejected = true; running = false }
+            "auth_invalid" -> { AppLog.e(ctx, "ha", "HA odrzucil token (auth_invalid) - klient zatrzymany"); prefs.connected = false; prefs.authRejected = true; running = false }
             "result" -> {
                 if (!m.optBoolean("success")) return
                 when (m.optInt("id")) {
@@ -259,13 +260,13 @@ class HaClient(private val ctx: Context, private val onRules: () -> Unit) {
         if (prefs.webhook.isNotBlank()) {
             hook(JSONObject().put("type", "status").put("state", if (acc) "ok" else "brak_dostepnosci").put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked)
                 .put("blocked_count", prefs.blocked.size).put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.6").put("sleep_until", sleepUntil))
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.7").put("sleep_until", sleepUntil))
             return
         }
         post("/api/states/sensor.aurora_guard_${prefs.deviceId}_status", JSONObject().put("state", if (acc) "ok" else "brak_dostepnosci")
             .put("attributes", JSONObject().put("accessibility", acc).put("locked", prefs.locked).put("full_locked", prefs.fullLocked).put("blocked_count", prefs.blocked.size)
                 .put("device_owner", Policy.isDeviceOwner(ctx)).put("battery", bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
-                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.6").put("sleep_until", sleepUntil)
+                .put("last_seen", iso).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE).put("version", "2.7").put("sleep_until", sleepUntil)
                 .put("friendly_name", "Aurora Guard – status (${prefs.deviceId})").put("icon", "mdi:shield-lock-outline")))
     }
 }

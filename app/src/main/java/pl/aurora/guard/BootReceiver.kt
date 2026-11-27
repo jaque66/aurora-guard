@@ -6,6 +6,7 @@ import android.content.Intent
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        if (Prefs(ctx).configured) { GuardService.start(ctx); Watchdog.schedule(ctx) }
+        AppLog.i(ctx, "boot", "odbiornik: ${intent.action}")
+        if (Prefs(ctx).configured) { GuardService.start(ctx); Watchdog.schedule(ctx); Heartbeat.schedule(ctx) }
     }
 }

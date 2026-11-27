@@ -9,8 +9,8 @@ android {
         applicationId = "pl.aurora.guard"
         minSdk = 26
         targetSdk = 34
-        versionCode = 21
-        versionName = "2.6"
+        versionCode = 22
+        versionName = "2.7"
     }
     // Podpis wydania: klucz i hasla pochodza ze zmiennych srodowiskowych (sekrety CI). Bez nich (lokalnie, forki) uzywany jest domyslny klucz debug.
     val ksFile = System.getenv("KEYSTORE_FILE")

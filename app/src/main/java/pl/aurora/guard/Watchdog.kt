@@ -11,7 +11,8 @@ import android.content.Context
 class Watchdog : JobService() {
     override fun onStartJob(p: JobParameters?): Boolean {
         val prefs = Prefs(this)
-        if (prefs.configured && !GuardService.running) GuardService.start(this)
+        if (prefs.configured && !GuardService.running) { AppLog.w(this, "watchdog", "usluga nie dziala - uruchamiam"); GuardService.start(this) }
+        try { Heal.check(this, "watchdog") } catch (_: Throwable) { }
         if (prefs.autoUpdate && System.currentTimeMillis() - prefs.lastUpdateCheck > 20 * 3600 * 1000L) {
             Thread {
                 try {
