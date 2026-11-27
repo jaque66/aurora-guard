@@ -24,6 +24,7 @@
         battery: "{{ trigger.json.battery if trigger.json.type | default('status') == 'status' else this.attributes.battery | default(none) }}"
         last_seen: "{{ trigger.json.last_seen if trigger.json.type | default('status') == 'status' else this.attributes.last_seen | default(none) }}"
         version: "{{ trigger.json.version if trigger.json.type | default('status') == 'status' else this.attributes.version | default(none) }}"
+        sleep_until: "{{ trigger.json.sleep_until | default(0) if trigger.json.type | default('status') == 'status' else this.attributes.sleep_until | default(0) }}"
     - name: "Aurora Guard CHILD apps"
       unique_id: aurora_guard_CHILD_apps
       icon: mdi:apps

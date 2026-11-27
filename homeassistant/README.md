@@ -31,6 +31,7 @@ Opcjonalnie automatyzacja trybu auto: blokada włączona, dopóki zadania dzieck
 | `input_text.guard_wiadomosc_<id>` | wiadomość na ekran telefonu (`czas_unix|tekst`) |
 | `input_button.guard_dzwon_<id>` | „Znajdź telefon” – głośny alarm |
 | `schedule.guard_noc_<id>`, `schedule.guard_lekcje_<id>`, `input_boolean.guard_harmonogram_<id>` | cisza nocna (blokada całego telefonu) i czas lekcji (blokada aplikacji) |
+| `input_boolean.guard_sen_<id>`, `input_datetime.guard_sen_od_<id>` / `guard_sen_do_<id>` | tryb nocny aplikacji (usypianie / budzenie, godziny); status zawiera atrybut `sleep_until` |
 | `counter.guard_zadania_<id>`, `guard_prosby_<id>`, `guard_sabotaz_<id>` | liczniki do raportu tygodniowego |
 
 Limity czasu: dodaj do listy `todo.guard_<id>` pozycję `pakiet|Nazwa|minuty` (np. `com.google.android.youtube|YouTube|60`). Bez trzeciego pola aplikacja jest blokowana całkowicie. Aplikacja wysyła przez webhook zdarzenia `request` (prośba o czas), `tamper` (ingerencja), `usage` (statystyki) i `location`; obsługują je automatyzacje (powiadomienia do rodziców, raport tygodniowy).
